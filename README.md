@@ -264,3 +264,36 @@ npm run db:reset
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
+## Patched fork
+
+This fork builds with Node 24.22.1, pinned by image digest in every Docker stage,
+using `npm ci`. CI runs lint, the frontend build, and backend integration tests
+before building or publishing images to `ghcr.io/kriss-spy/subscription-management`.
+Existing notification customizations on a deployment host must be
+reviewed and carried over separately; they were not present in this checkout.
+
+Before replacing an existing deployment:
+
+1. Back up its actual data volume and verify a restore into a disposable volume.
+   For a live SQLite database, use SQLite's online backup API, or stop the writer
+   while taking a filesystem backup; include WAL files when applicable.
+2. Test the new image against a disposable restored database. Check login, subscription
+   reads/writes, scheduled jobs, and configured notification and exchange-rate providers.
+3. Set `SUBSCRIPTION_IMAGE` to the tested fork image by immutable tag or digest.
+   Verify the resolved Compose configuration keeps the **same existing volume**
+   mounted at `/app/data`. Compose can prefix volume names with the project name;
+   do not assume a newly resolved volume is the production volume.
+4. Preserve the production environment and current loopback/reverse-proxy binding.
+   Keep the old image reference for rollback and a separately verified database backup.
+5. Redeploy and check container health, logs, runtime version, and restart persistence.
+
+Do not run `db:reset` or remove the data volume during this upgrade.
+`/api/health` provides a minimal public liveness response for container probes;
+application data endpoints still require a session.
+
+Security validation on 2026-10-22: backend production dependencies audit clean.
+Full audits still report findings in Tailwind 3's build dependencies and Jest's
+`sprintf-js` dependency. These packages are excluded from the production backend
+image; the frontend is shipped as static build output. A Tailwind 4 migration is
+separate work, and dependency audits should be rerun before release.

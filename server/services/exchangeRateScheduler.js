@@ -25,10 +25,9 @@ class ExchangeRateScheduler {
         }
 
         // 每天凌晨2点执行 (0 2 * * *)
-        this.task = cron.schedule('0 2 * * *', async () => {
+        this.task = cron.createTask('0 2 * * *', async () => {
             await this.updateExchangeRates();
         }, {
-            scheduled: false,
             timezone: 'Asia/Shanghai' // 使用中国时区
         });
 
@@ -46,7 +45,7 @@ class ExchangeRateScheduler {
      */
     stop() {
         if (this.task) {
-            this.task.stop();
+            this.task.destroy();
             this.task = null;
         }
         this.isRunning = false;
@@ -144,7 +143,7 @@ class ExchangeRateScheduler {
     getStatus() {
         return {
             isRunning: this.isRunning,
-            nextRun: this.task ? this.task.nextDate() : null,
+            nextRun: this.task ? this.task.getNextRun() : null,
             hasApiKey: !!this.exchangeRateService.apiKey
         };
     }

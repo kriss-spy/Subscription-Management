@@ -58,7 +58,7 @@ export const EmailConfig: React.FC<EmailConfigProps> = ({ onConfigChange }) => {
         setEmailConfig({ email: configEmail, validated: true });
         setChannelValidated('email', true);
       }
-    } catch (error) {
+    } catch {
       // 404 indicates channel not yet configured; keep local state
       setIsActive(false);
     } finally {

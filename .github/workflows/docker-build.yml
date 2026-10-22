@@ -17,7 +17,42 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --prefix server --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test --prefix server -- --runInBand
+      - name: Audit backend production dependencies
+        shell: bash
+        run: |
+          set +e
+          npm audit --prefix server --omit=dev --json --fetch-retries=0 --fetch-timeout=20000 > audit.json
+          audit_status=$?
+          set -e
+          # A completed audit (including vulnerabilities) must never use the fallback.
+          if node -e 'const a = require("./audit.json"); process.exit(a.metadata?.vulnerabilities ? 0 : 1)'; then
+            cat audit.json
+            exit "$audit_status"
+          fi
+          cat audit.json
+          echo "Primary audit endpoint unavailable; retrying through Yarn's registry mirror."
+          npm audit --prefix server --omit=dev --registry=https://registry.yarnpkg.com --fetch-retries=0 --fetch-timeout=30000
+
   build:
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: read

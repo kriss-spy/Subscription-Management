@@ -36,7 +36,7 @@ class NotificationScheduler {
 
             // 停止现有任务
             if (this.job) {
-                this.job.stop();
+                this.job.destroy();
                 this.job = null;
             }
 
@@ -52,11 +52,10 @@ class NotificationScheduler {
             const cronExpression = `${minute} ${hour} * * *`;
 
             // 创建新的定时任务
-            this.job = cron.schedule(cronExpression, async () => {
+            this.job = cron.createTask(cronExpression, async () => {
                 console.log(`🔔 Starting notification check at ${settings.notification_check_time}...`);
                 await this.checkAndSendNotifications();
             }, {
-                scheduled: false,
                 timezone: settings.timezone
             });
 
@@ -112,8 +111,9 @@ class NotificationScheduler {
      * 停止通知调度器
      */
     stop() {
+        this.currentSchedule = null;
         if (this.job) {
-            this.job.stop();
+            this.job.destroy();
             this.job = null;
             console.log('⏹️ Notification scheduler stopped');
         }
@@ -288,7 +288,7 @@ class NotificationScheduler {
     getStatus() {
         return {
             running: this.job !== null,
-            nextRun: this.job ? this.job.running : false
+            nextRun: this.job ? ['idle', 'running'].includes(this.job.getStatus()) : false
         };
     }
 
@@ -296,6 +296,7 @@ class NotificationScheduler {
      * 关闭数据库连接
      */
     close() {
+        this.stop();
         if (this.db) {
             this.db.close();
         }
