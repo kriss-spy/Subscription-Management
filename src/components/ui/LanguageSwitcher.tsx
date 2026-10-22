@@ -51,8 +51,6 @@ export function LanguageSwitcher() {
     loadLanguage();
   }, [i18n]);
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language);
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

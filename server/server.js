@@ -70,8 +70,8 @@ notificationScheduler.start();
 // Serve static files from the public directory (frontend build)
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// API health check endpoint (requires login)
-app.get('/api/health', requireLogin, (req, res) => {
+// Minimal liveness response for unauthenticated container health probes
+app.get('/api/health', (req, res) => {
   res.json({ message: 'Subscription Management Backend is running!', status: 'healthy' });
 });
 

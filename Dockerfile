@@ -1,5 +1,5 @@
 # Build stage for frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:24.22.1-alpine@sha256:feb76650b7195319268c59cb2d419c732d6c499b13bf5296f16ab59eb1f0a4f3 AS frontend-builder
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install frontend dependencies
-RUN npm install
+RUN npm ci --no-audit --no-fund
 
 # Copy configuration files
 COPY tsconfig*.json ./
@@ -25,7 +25,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Build stage for backend preparation
-FROM node:20-alpine AS backend-builder
+FROM node:24.22.1-alpine@sha256:feb76650b7195319268c59cb2d419c732d6c499b13bf5296f16ab59eb1f0a4f3 AS backend-builder
 
 # Install build dependencies for native modules
 RUN apk add --no-cache python3 make g++
@@ -36,10 +36,10 @@ WORKDIR /app/server
 COPY server/package*.json ./
 
 # Install backend dependencies (production only)
-RUN npm install --omit=dev
+RUN npm ci --omit=dev --no-audit --no-fund
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:24.22.1-alpine@sha256:feb76650b7195319268c59cb2d419c732d6c499b13bf5296f16ab59eb1f0a4f3 AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
